@@ -17,11 +17,8 @@ import { supabase } from '@/lib/customSupabaseClient';
 import { useToast } from '@/components/ui/use-toast';
 import { formatValue, formatArray, generateSummary } from '@/utils/builderSummaryFormatters';
 
-
-
 const SummaryCard = ({ number, title, subtitle, icon: Icon, items }) => {
   if (!items || items.length === 0) return null;
-
 
   return (
     <div className="relative overflow-hidden rounded-xl bg-[#121821] backdrop-blur-md border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
@@ -38,7 +35,6 @@ const SummaryCard = ({ number, title, subtitle, icon: Icon, items }) => {
           </div>
         </div>
 
-
         <div className="space-y-3 mt-6">
           {items.map((item, idx) => (
             <div key={idx} className="flex items-start gap-3">
@@ -54,15 +50,12 @@ const SummaryCard = ({ number, title, subtitle, icon: Icon, items }) => {
   );
 };
 
-
-
 const BuilderSummary = ({ formData, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
 
-  // NEW: Contact information state
   const [contactInfo, setContactInfo] = useState({
     fullName: '',
     email: '',
@@ -70,10 +63,7 @@ const BuilderSummary = ({ formData, onBack }) => {
     companyName: ''
   });
 
-
-
   const handleSubmit = async () => {
-    // NEW: Validate contact info
     if (!contactInfo.fullName || !contactInfo.email) {
       setError("Please provide your name and email address");
       toast({
@@ -87,8 +77,39 @@ const BuilderSummary = ({ formData, onBack }) => {
     setIsSubmitting(true);
     setError(null);
 
-
     try {
+      const summaryHtml = `
+        <div style="margin: 20px 0;">
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #7C3AED; margin-bottom: 10px;">🖥️ Interface & Experience</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              ${level1Items.map(item => `<li style="margin: 5px 0;">${item}</li>`).join('')}
+            </ul>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #7C3AED; margin-bottom: 10px;">⚙️ Platform Logic</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              ${level2Unique.map(item => `<li style="margin: 5px 0;">${item}</li>`).join('')}
+            </ul>
+          </div>
+          
+          <div style="margin-bottom: 20px;">
+            <h4 style="color: #7C3AED; margin-bottom: 10px;">🔧 Operations & Admin</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              ${level3Unique.map(item => `<li style="margin: 5px 0;">${item}</li>`).join('')}
+            </ul>
+          </div>
+          
+          <div>
+            <h4 style="color: #7C3AED; margin-bottom: 10px;">📈 Scale & Growth</h4>
+            <ul style="margin: 0; padding-left: 20px;">
+              ${level4Items.map(item => `<li style="margin: 5px 0;">${item}</li>`).join('')}
+            </ul>
+          </div>
+        </div>
+      `;
+
       const payload = {
         platform_type: formData.platform_type,
         access_model: formData.access_model,
@@ -103,21 +124,18 @@ const BuilderSummary = ({ formData, onBack }) => {
         scale_level: formData.scale_level,
         growth_features: formData.growth_features || [],
         source_page: 'build_your_app_wizard',
-        // NEW: Contact fields
         full_name: contactInfo.fullName,
         email: contactInfo.email,
         phone: contactInfo.phone,
-        company_name: contactInfo.companyName
+        company_name: contactInfo.companyName,
+        summary_html: summaryHtml
       };
-
 
       const { error: insertError } = await supabase
         .from('phenomeny_build_your_app')
         .insert([payload]);
 
-
       if (insertError) throw insertError;
-
 
       setIsSuccess(true);
       toast({
@@ -125,7 +143,6 @@ const BuilderSummary = ({ formData, onBack }) => {
         description: "Thanks for sharing your requirements! Our team will connect with you shortly to discuss your project.",
         className: "bg-green-600 border-none text-white",
       });
-
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -139,8 +156,6 @@ const BuilderSummary = ({ formData, onBack }) => {
       setIsSubmitting(false);
     }
   };
-
-
 
   if (isSuccess) {
     return (
@@ -177,13 +192,11 @@ const BuilderSummary = ({ formData, onBack }) => {
     );
   }
 
-
   const level1Items = [
     formData.platform_type ? `Platform Type: ${formatValue(formData.platform_type)}` : null,
     formData.access_model ? `Access Model: ${formatValue(formData.access_model)}` : null,
     ...formatArray(formData.experience_type).map(item => `Experience Type: ${item}`)
   ].filter(Boolean);
-
 
   const level2Items = [
     ...formatArray(formData.commerce_features).map(item => `Commerce: ${item}`),
@@ -193,7 +206,6 @@ const BuilderSummary = ({ formData, onBack }) => {
   ].filter(Boolean);
   const level2Unique = [...new Set(level2Items)];
 
-
   const level3Items = [
     ...formatArray(formData.admin_controls).map(item => `Admin Control: ${item}`),
     ...formatArray(formData.integrations).map(item => `Integration: ${item}`),
@@ -201,14 +213,10 @@ const BuilderSummary = ({ formData, onBack }) => {
   ].filter(Boolean);
   const level3Unique = [...new Set(level3Items)];
 
-
   const level4Items = [
     formData.scale_level ? `Target Scale: ${formatValue(formData.scale_level)}` : null,
     ...formatArray(formData.growth_features).map(item => `Growth Feature: ${item}`)
   ].filter(Boolean);
-
-
-
 
   return (
     <motion.div 
@@ -224,7 +232,6 @@ const BuilderSummary = ({ formData, onBack }) => {
           "{generateSummary(formData)}"
         </p>
       </div>
-
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         <SummaryCard 
@@ -257,8 +264,6 @@ const BuilderSummary = ({ formData, onBack }) => {
         />
       </div>
 
-
-      {/* NEW: Contact Information Section */}
       <div className="mb-8 p-8 bg-[#121821] rounded-xl border border-white/10">
         <h3 className="text-xl font-bold text-white mb-2">Your Contact Information</h3>
         <p className="text-sm text-gray-400 mb-6">We'll use this to discuss your project</p>
@@ -300,7 +305,6 @@ const BuilderSummary = ({ formData, onBack }) => {
         </div>
       </div>
 
-
       {error && (
         <motion.div 
           initial={{ opacity: 0, height: 0 }}
@@ -313,7 +317,6 @@ const BuilderSummary = ({ formData, onBack }) => {
           </div>
         </motion.div>
       )}
-
 
       <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button 
@@ -343,7 +346,5 @@ const BuilderSummary = ({ formData, onBack }) => {
     </motion.div>
   );
 };
-
-
 
 export default BuilderSummary;
