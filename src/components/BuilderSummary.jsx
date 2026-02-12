@@ -18,8 +18,10 @@ import { useToast } from '@/components/ui/use-toast';
 import { formatValue, formatArray, generateSummary } from '@/utils/builderSummaryFormatters';
 
 
+
 const SummaryCard = ({ number, title, subtitle, icon: Icon, items }) => {
   if (!items || items.length === 0) return null;
+
 
   return (
     <div className="relative overflow-hidden rounded-xl bg-[#121821] backdrop-blur-md border border-white/10 shadow-[0_4px_12px_rgba(0,0,0,0.3)]">
@@ -35,6 +37,7 @@ const SummaryCard = ({ number, title, subtitle, icon: Icon, items }) => {
             <Icon size={20} />
           </div>
         </div>
+
 
         <div className="space-y-3 mt-6">
           {items.map((item, idx) => (
@@ -52,16 +55,38 @@ const SummaryCard = ({ number, title, subtitle, icon: Icon, items }) => {
 };
 
 
+
 const BuilderSummary = ({ formData, onBack }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
   const { toast } = useToast();
 
+  // NEW: Contact information state
+  const [contactInfo, setContactInfo] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    companyName: ''
+  });
+
+
 
   const handleSubmit = async () => {
+    // NEW: Validate contact info
+    if (!contactInfo.fullName || !contactInfo.email) {
+      setError("Please provide your name and email address");
+      toast({
+        title: "Missing Information",
+        description: "Please fill in your name and email to continue",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
+
 
     try {
       const payload = {
@@ -77,14 +102,22 @@ const BuilderSummary = ({ formData, onBack }) => {
         automation_features: formData.automation_features || [],
         scale_level: formData.scale_level,
         growth_features: formData.growth_features || [],
-        source_page: 'build_your_app_wizard'
+        source_page: 'build_your_app_wizard',
+        // NEW: Contact fields
+        full_name: contactInfo.fullName,
+        email: contactInfo.email,
+        phone: contactInfo.phone,
+        company_name: contactInfo.companyName
       };
+
 
       const { error: insertError } = await supabase
         .from('phenomeny_build_your_app')
         .insert([payload]);
 
+
       if (insertError) throw insertError;
+
 
       setIsSuccess(true);
       toast({
@@ -92,6 +125,7 @@ const BuilderSummary = ({ formData, onBack }) => {
         description: "Thanks for sharing your requirements! Our team will connect with you shortly to discuss your project.",
         className: "bg-green-600 border-none text-white",
       });
+
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -105,6 +139,7 @@ const BuilderSummary = ({ formData, onBack }) => {
       setIsSubmitting(false);
     }
   };
+
 
 
   if (isSuccess) {
@@ -142,11 +177,13 @@ const BuilderSummary = ({ formData, onBack }) => {
     );
   }
 
+
   const level1Items = [
     formData.platform_type ? `Platform Type: ${formatValue(formData.platform_type)}` : null,
     formData.access_model ? `Access Model: ${formatValue(formData.access_model)}` : null,
     ...formatArray(formData.experience_type).map(item => `Experience Type: ${item}`)
   ].filter(Boolean);
+
 
   const level2Items = [
     ...formatArray(formData.commerce_features).map(item => `Commerce: ${item}`),
@@ -156,6 +193,7 @@ const BuilderSummary = ({ formData, onBack }) => {
   ].filter(Boolean);
   const level2Unique = [...new Set(level2Items)];
 
+
   const level3Items = [
     ...formatArray(formData.admin_controls).map(item => `Admin Control: ${item}`),
     ...formatArray(formData.integrations).map(item => `Integration: ${item}`),
@@ -163,10 +201,12 @@ const BuilderSummary = ({ formData, onBack }) => {
   ].filter(Boolean);
   const level3Unique = [...new Set(level3Items)];
 
+
   const level4Items = [
     formData.scale_level ? `Target Scale: ${formatValue(formData.scale_level)}` : null,
     ...formatArray(formData.growth_features).map(item => `Growth Feature: ${item}`)
   ].filter(Boolean);
+
 
 
 
@@ -184,6 +224,7 @@ const BuilderSummary = ({ formData, onBack }) => {
           "{generateSummary(formData)}"
         </p>
       </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
         <SummaryCard 
@@ -216,6 +257,50 @@ const BuilderSummary = ({ formData, onBack }) => {
         />
       </div>
 
+
+      {/* NEW: Contact Information Section */}
+      <div className="mb-8 p-8 bg-[#121821] rounded-xl border border-white/10">
+        <h3 className="text-xl font-bold text-white mb-2">Your Contact Information</h3>
+        <p className="text-sm text-gray-400 mb-6">We'll use this to discuss your project</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Full Name *"
+            value={contactInfo.fullName}
+            onChange={(e) => setContactInfo({...contactInfo, fullName: e.target.value})}
+            required
+            className="h-12 px-4 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED] transition-colors"
+          />
+          
+          <input
+            type="email"
+            placeholder="Email Address *"
+            value={contactInfo.email}
+            onChange={(e) => setContactInfo({...contactInfo, email: e.target.value})}
+            required
+            className="h-12 px-4 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED] transition-colors"
+          />
+          
+          <input
+            type="tel"
+            placeholder="Phone Number"
+            value={contactInfo.phone}
+            onChange={(e) => setContactInfo({...contactInfo, phone: e.target.value})}
+            className="h-12 px-4 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED] transition-colors"
+          />
+          
+          <input
+            type="text"
+            placeholder="Company Name (Optional)"
+            value={contactInfo.companyName}
+            onChange={(e) => setContactInfo({...contactInfo, companyName: e.target.value})}
+            className="h-12 px-4 bg-white/5 border border-white/10 rounded-lg text-white placeholder:text-gray-500 focus:outline-none focus:border-[#7C3AED] transition-colors"
+          />
+        </div>
+      </div>
+
+
       {error && (
         <motion.div 
           initial={{ opacity: 0, height: 0 }}
@@ -228,6 +313,7 @@ const BuilderSummary = ({ formData, onBack }) => {
           </div>
         </motion.div>
       )}
+
 
       <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
         <Button 
@@ -257,6 +343,7 @@ const BuilderSummary = ({ formData, onBack }) => {
     </motion.div>
   );
 };
+
 
 
 export default BuilderSummary;
